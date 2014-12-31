@@ -1,4 +1,5 @@
 <?php
+
 /**
 * Basic interaction with the SiteScout API.
 * Includes authentication functionality.
@@ -7,7 +8,9 @@
 *
 */
 
+
 class API{
+  
   private $_auth_url = null;
   private $_client_id = null;
   private $_client_secret = null;
@@ -29,6 +32,9 @@ class API{
     $this->_client_secret =$client_secret;
     $this->setAuthHeader();
     $this->_ch_header = $this->setCurlHeader();
+  }
+  
+  public function init(){
     $this->_ch = curl_init();
   }
   
@@ -67,7 +73,7 @@ class API{
   */
   public function setCurlHeader(){
     $header  = array(
-      "POST https://api.sitescout.com/oauth/token HTTP/1.1",
+      "POST /oauth/token HTTP/1.1",
       "HOST: api.sitescout.com",
       "Authorization: {$this->_auth_header}",
       "Content-Type: application/x-www-form-urlencoded",
@@ -76,35 +82,19 @@ class API{
     );
     return $header;
   }
-  
-  /**
-    * close CURL
-    * @var 
-  */
+
   public function __destruct() {
-    curl_close($this->_ch);
+    
   }
-  
-  /**
-    * set CURL user agent
-    * @var agent
-  */
+
   public function setUserAgent($agent) {
       $this->_user_agent = $agent;
   }
-  
-  /**
-    * get CURL user agent
-    * @var 
-  */
+
   public function getUserAgent() {
       return $this->_user_agent;
   }
   
-  /**
-    * set CURL timeout
-    * @var time
-  */
   public function setCurlTimeout($time=null){
     if($time!=null){
       $this->_ch_time_out($time);
@@ -128,7 +118,7 @@ class API{
   public function getAdvertiserId(){
     return $this->_advertiser_id;
   }
-  
+
   /**
     * set auth token
     * @var tkn
@@ -147,20 +137,19 @@ class API{
     return $this->_token;
   }
 
-  /**
-    * make auth CURL request
-    * @var url
-  */
+
   public function execute() {
+  	$this->init();
     curl_setopt($this->_ch, CURLOPT_URL, $this->_auth_url);
     curl_setopt($this->_ch, CURLOPT_HEADER, true);
     curl_setopt($this->_ch, CURLOPT_HTTPHEADER, $this->_ch_header);
     curl_setopt($this->_ch, CURLOPT_TIMEOUT, $this->_ch_time_out);
     curl_setopt($this->_ch, CURLOPT_POST, true);
     curl_setopt($this->_ch, CURLOPT_POSTFIELDS, $this->_ch_post);
-    curl_setopt($this->_ch, CURLOPT_RETURNTRANSFER, TRUE);
-
+    curl_setopt($this->_ch, CURLOPT_RETURNTRANSFER, true);
+	curl_setopt($this->_ch, CURLOPT_SSL_VERIFYPEER, false);
     $response = curl_exec($this->_ch);
+    curl_close($this->_ch);
     return $response;
   }
   
@@ -168,8 +157,9 @@ class API{
     * fetch advertizer campaigns
     * @var url
   */
-  public function getCampaigns(){
-    $curl = 'https://api.sitescout.com/advertisers/'.$this->_advertiser_id.'/campaigns/stats';
+  public function getCampaigns($query=''){
+  $this->init();
+    $curl = 'https://api.sitescout.com/advertisers/'.$this->_advertiser_id.'/campaigns/stats?'.$query;
      $cheader  = array(
       "HOST: api.sitescout.com",
       "Authorization: Bearer {$this->_token}",
@@ -182,7 +172,9 @@ class API{
     curl_setopt($this->_ch, CURLOPT_TIMEOUT, $this->_ch_time_out);
     curl_setopt($this->_ch, CURLOPT_HTTPGET, 1);
     curl_setopt($this->_ch, CURLOPT_RETURNTRANSFER, TRUE);
+	curl_setopt($this->_ch, CURLOPT_SSL_VERIFYPEER, false);
     $response = curl_exec($this->_ch);
+     curl_close($this->_ch);
     return $response;
   }
   
@@ -190,8 +182,9 @@ class API{
     * fetch advertizer specific campaign 
     * @var cid
   */
-  public function getCampaign($cid=null){
-    $curl = 'https://api.sitescout.com/advertisers/'.$this->_advertiser_id.'/campaigns/'.$cid.'/stats';
+  public function getCampaign($cid=null,$query=''){
+  $this->init();
+    $curl = 'https://api.sitescout.com/advertisers/'.$this->_advertiser_id.'/campaigns/'.$cid.'/stats?'.$query;
      $cheader  = array(
       "HOST: api.sitescout.com",
       "Authorization: Bearer {$this->_token}",
@@ -204,16 +197,45 @@ class API{
     curl_setopt($this->_ch, CURLOPT_TIMEOUT, $this->_ch_time_out);
     curl_setopt($this->_ch, CURLOPT_HTTPGET, 1);
     curl_setopt($this->_ch, CURLOPT_RETURNTRANSFER, TRUE);
+	curl_setopt($this->_ch, CURLOPT_SSL_VERIFYPEER, false);
     $response = curl_exec($this->_ch);
+     curl_close($this->_ch);
+    return $response;
+  }
+  
+  
+  /**
+    * fetch advertizer site stats
+    * @var cid, siteRef
+  */
+  public function getCampaignPerSite($cid=null,$query=''){
+  $this->init();
+    $curl = 'https://api.sitescout.com/advertisers/'.$this->_advertiser_id.'/campaigns/'.$cid.'/stats/sites?'.$query;
+     $cheader  = array(
+      "HOST: api.sitescout.com",
+      "Authorization: Bearer {$this->_token}",
+      "Content-Type: application/x-www-form-urlencoded",
+      "Accept: application/json"
+    );
+    curl_setopt($this->_ch, CURLOPT_URL, $curl);
+    curl_setopt($this->_ch, CURLOPT_HEADER, true);
+    curl_setopt($this->_ch, CURLOPT_HTTPHEADER, $cheader);
+    curl_setopt($this->_ch, CURLOPT_TIMEOUT, $this->_ch_time_out);
+    curl_setopt($this->_ch, CURLOPT_HTTPGET, 1);
+    curl_setopt($this->_ch, CURLOPT_RETURNTRANSFER, TRUE);
+	curl_setopt($this->_ch, CURLOPT_SSL_VERIFYPEER, false);
+    $response = curl_exec($this->_ch);
+     curl_close($this->_ch);
     return $response;
   }
   
   /**
-    * fetch advertizer sites per campaigns
+    * fetch advertizer domains per campaigns
     * @var cid
   */
-  public function getCampaignPerSite($cid=null){
-    $curl = 'https://api.sitescout.com/advertisers/'.$this->_advertiser_id.'/campaigns/'.$cid.'/stats/sites';
+    public function getCampaignPerDomain($cid=null,$query=''){
+    $this->init();
+    $curl = 'https://api.sitescout.com/advertisers/'.$this->_advertiser_id.'/campaigns/'.$cid.'/stats/domains?'.$query;
      $cheader  = array(
       "HOST: api.sitescout.com",
       "Authorization: Bearer {$this->_token}",
@@ -226,7 +248,10 @@ class API{
     curl_setopt($this->_ch, CURLOPT_TIMEOUT, $this->_ch_time_out);
     curl_setopt($this->_ch, CURLOPT_HTTPGET, 1);
     curl_setopt($this->_ch, CURLOPT_RETURNTRANSFER, TRUE);
+	curl_setopt($this->_ch, CURLOPT_SSL_VERIFYPEER, false);
     $response = curl_exec($this->_ch);
+    
+    curl_close($this->_ch);
     return $response;
   }
   
@@ -234,8 +259,9 @@ class API{
     * fetch advertizer creatives per campaigns
     * @var cid
   */
-  public function getCampaignPerCreative($cid=null){
-    $curl = 'https://api.sitescout.com/advertisers/'.$this->_advertiser_id.'/campaigns/'.$cid.'/stats/creatives';
+  public function getCampaignPerCreative($cid=null,$query=''){
+  $this->init();
+    $curl = 'https://api.sitescout.com/advertisers/'.$this->_advertiser_id.'/campaigns/'.$cid.'/stats/creatives?'.$query;
      $cheader  = array(
       "HOST: api.sitescout.com",
       "Authorization: Bearer {$this->_token}",
@@ -248,29 +274,9 @@ class API{
     curl_setopt($this->_ch, CURLOPT_TIMEOUT, $this->_ch_time_out);
     curl_setopt($this->_ch, CURLOPT_HTTPGET, 1);
     curl_setopt($this->_ch, CURLOPT_RETURNTRANSFER, TRUE);
+	curl_setopt($this->_ch, CURLOPT_SSL_VERIFYPEER, false);
     $response = curl_exec($this->_ch);
-    return $response;
-  }
-  
-  /**
-    * fetch advertizer site stats
-    * @var cid, siteRef
-  */
-  public function getCampaignSiteStats($cid=null,$siteRef=null){
-    $curl = 'https://api.sitescout.com/advertisers/'.$this->_advertiser_id.'/campaigns/'.$cid.'/stats/sites/'.$siteRef.'';
-     $cheader  = array(
-      "HOST: api.sitescout.com",
-      "Authorization: Bearer {$this->_token}",
-      "Content-Type: application/x-www-form-urlencoded",
-      "Accept: application/json"
-    );
-    curl_setopt($this->_ch, CURLOPT_URL, $curl);
-    curl_setopt($this->_ch, CURLOPT_HEADER, true);
-    curl_setopt($this->_ch, CURLOPT_HTTPHEADER, $cheader);
-    curl_setopt($this->_ch, CURLOPT_TIMEOUT, $this->_ch_time_out);
-    curl_setopt($this->_ch, CURLOPT_HTTPGET, 1);
-    curl_setopt($this->_ch, CURLOPT_RETURNTRANSFER, TRUE);
-    $response = curl_exec($this->_ch);
+    curl_close($this->_ch);
     return $response;
   }
   
